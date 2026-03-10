@@ -36,14 +36,13 @@ const identificarCategoria = (nome) => {
     return { cat: "Outros", cor: "#94a3b8" };
 };
 
-const fmt = v => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+// Função para formatar exibição de moeda (não-editável)
+const fmt = v => (v / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-// Função para formatar input de moeda (remover não-números e formatar)
-const formatCurrencyInput = (value) => {
-    if (!value && value !== 0) return "";
-    // Usamos Math.round para evitar problemas de precisão (ex: 1.15 * 100 = 114.9999)
-    const digits = String(Math.round(value)).replace(/\D/g, "");
-    const realValue = Number(digits) / 100;
+// Função para formatar input de moeda (editável)
+const formatCurrencyInputCents = (cents) => {
+    if (!cents && cents !== 0) return "";
+    const realValue = Number(cents) / 100;
     return realValue.toLocaleString("pt-BR", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
@@ -101,7 +100,7 @@ export default function App() {
 
     const totalGastos = gastos.reduce((acc, g) => acc + g.valor, 0);
     const saldo = salario - totalGastos;
-    const porcentagemComprometida = ((totalGastos / salario) * 100).toFixed(1);
+    const porcentagemComprometida = salario > 0 ? ((totalGastos / salario) * 100).toFixed(1) : "0.0";
 
     const categorias = gastos.reduce((acc, g) => {
         const existente = acc.find(c => c.nome === g.cat);
@@ -307,7 +306,7 @@ export default function App() {
                                     value={salario === 0 ? "R$ 0,00" : fmt(salario)}
                                     onChange={(e) => {
                                         const rawValue = e.target.value.replace(/\D/g, "");
-                                        setSalario(Number(rawValue) / 100);
+                                        setSalario(rawValue === "" ? 0 : Number(rawValue));
                                     }}
                                     className="salary-input"
                                 />
@@ -393,10 +392,10 @@ export default function App() {
                         <input 
                             type="text"
                             placeholder="Valor"
-                            value={novoGasto.valor === "" ? "" : formatCurrencyInput(Number(novoGasto.valor) * 100)}
+                            value={novoGasto.valor === "" ? "" : formatCurrencyInputCents(novoGasto.valor)}
                             onChange={e => {
                                 const rawValue = e.target.value.replace(/\D/g, "");
-                                setNovoGasto({...novoGasto, valor: rawValue === "" ? "" : Number(rawValue) / 100});
+                                setNovoGasto({...novoGasto, valor: rawValue === "" ? "" : Number(rawValue)});
                             }}
                             className="base-input"
                         />

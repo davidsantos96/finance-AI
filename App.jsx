@@ -291,18 +291,13 @@ export default function App() {
                     <button title="Exportar Excel" onClick={exportarExcel} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer" }}>
                         <Table size={18} />
                     </button>
-                </div>
-            </div>
-
-            <div style={{ maxWidth: 660, margin: "0 auto", padding: "28px 20px" }}>
+                    <div className="main-container">
                 
-
-
                 {/* Hero / Sumário */}
-                <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? "translateY(0)" : "translateY(16px)", transition: "all .6s ease", marginBottom: 28 }}>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
-                        <div style={{ background: "#0d111755", padding: "10px 14px", borderRadius: 16, border: "1px solid #1e253533", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                            <div style={{ fontSize: 8, letterSpacing: 2, color: "#475569", textTransform: "uppercase", marginBottom: 4 }}>Salário</div>
+                <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? "translateY(0)" : "translateY(16px)", transition: "all .6s ease", marginBottom: 20 }}>
+                    <div className="summary-grid">
+                        <div className="summary-card">
+                            <div className="summary-label">Salário</div>
                             <div style={{ position: "relative", display: "flex", justifyContent: "center" }}>
                                 <input 
                                     type="text"
@@ -311,23 +306,20 @@ export default function App() {
                                         const rawValue = e.target.value.replace(/\D/g, "");
                                         setSalario(Number(rawValue) / 100);
                                     }}
-                                    style={{ 
-                                        background: "transparent", border: "none", color: "#34d399", 
-                                        fontSize: 18, fontWeight: 600, fontFamily: "monospace", 
-                                        textAlign: "center", width: "100%", outline: "none", padding: 0
-                                    }}
+                                    className="salary-input"
                                 />
                             </div>
                         </div>
-                        <div style={{ background: "#0d111755", padding: 14, borderRadius: 16, border: "1px solid #1e253533", textAlign: "center" }}>
-                            <div style={{ fontSize: 8, letterSpacing: 2, color: "#475569", textTransform: "uppercase", marginBottom: 6 }}>Gastos</div>
-                            <div style={{ fontSize: 19, fontWeight: 600, color: "#f87171", fontFamily: "monospace" }}>{fmt(totalGastos)}</div>
+                        <div className="summary-card">
+                            <div className="summary-label">Gastos</div>
+                            <div style={{ fontSize: 18, fontWeight: 600, color: "#f87171", fontFamily: "monospace" }}>{fmt(totalGastos)}</div>
                         </div>
-                        <div style={{ background: "#0d111755", padding: 14, borderRadius: 16, border: "1px solid #1e253533", textAlign: "center" }}>
-                            <div style={{ fontSize: 8, letterSpacing: 2, color: "#475569", textTransform: "uppercase", marginBottom: 6 }}>Saldo</div>
-                            <div style={{ fontSize: 19, fontWeight: 600, color: "#60a5fa", fontFamily: "monospace" }}>{fmt(saldo)}</div>
+                        <div className="summary-card saldo-card">
+                            <div className="summary-label">Saldo</div>
+                            <div style={{ fontSize: 18, fontWeight: 600, color: "#60a5fa", fontFamily: "monospace" }}>{fmt(saldo)}</div>
                         </div>
                     </div>
+                </div>        </div>
                 </div>
 
                 {/* Bloco de Ação IA */}
@@ -385,21 +377,17 @@ export default function App() {
                 )}
 
                 {/* Formulário de Adição */}
-                <form onSubmit={handleAddGasto} style={{ 
-                    display: "flex", gap: 10, marginBottom: 32, padding: 16, 
-                    background: "#0d111755", 
-                    borderRadius: 16, border: "1px solid #1e2535" 
-                }}>
-                    <div style={{ flex: 2 }}>
+                <form onSubmit={handleAddGasto} className="add-form">
+                    <div className="input-desc">
                         <input 
                             ref={inputDescRef}
                             placeholder="Descrição do gasto..."
                             value={novoGasto.nome}
                             onChange={e => setNovoGasto({...novoGasto, nome: e.target.value})}
-                            style={{ width: "100%", background: "#05070a", border: "1px solid #1e2535", color: "#f1f5f9", padding: "12px", borderRadius: 10, fontSize: 13 }}
+                            className="base-input"
                         />
                     </div>
-                    <div style={{ flex: 1 }}>
+                    <div className="input-val">
                         <input 
                             type="text"
                             placeholder="Valor"
@@ -408,14 +396,10 @@ export default function App() {
                                 const rawValue = e.target.value.replace(/\D/g, "");
                                 setNovoGasto({...novoGasto, valor: rawValue === "" ? "" : Number(rawValue) / 100});
                             }}
-                            style={{ width: "100%", background: "#05070a", border: "1px solid #1e2535", color: "#f1f5f9", padding: "12px", borderRadius: 10, fontSize: 13, boxSizing: "border-box" }}
+                            className="base-input"
                         />
                     </div>
-                    <button type="submit" style={{ 
-                        height: 42, width: 42, borderRadius: 10, 
-                        background: "#34d399", color: "#000", border: "none", 
-                        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" 
-                    }}>
+                    <button type="submit" className="add-button">
                         <Plus size={22} />
                     </button>
                 </form>
@@ -434,21 +418,23 @@ export default function App() {
                 </div>
 
                 {aba === "geral" && (
-                    <div>
+                    <div className="chart-section">
                         {gastos.length > 0 ? (
-                            <div style={{ display: "grid", gridTemplateColumns: "170px 1fr", gap: 30, alignItems: "center", marginBottom: 20 }}>
-                                <PieChart width={170} height={170}>
-                                    <Pie data={categorias} dataKey="valor" cx={80} cy={80} innerRadius={50} outerRadius={80} paddingAngle={3}
-                                        onMouseEnter={(_, i) => setHov(categorias[i].nome)} onMouseLeave={() => setHov(null)}>
-                                        {categorias.map(c => (
-                                            <Cell key={c.nome} fill={c.cor}
-                                                opacity={hov === null || hov === c.nome ? 1 : 0.2}
-                                                style={{ cursor: "pointer", filter: hov === c.nome ? `drop-shadow(0 0 8px ${c.cor}66)` : "none", transition: "all 0.3s" }} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip content={<CustomTooltip total={totalGastos} />} />
-                                </PieChart>
-                                <div>
+                            <div className="chart-grid">
+                                <div className="pie-container">
+                                    <PieChart width={170} height={170}>
+                                        <Pie data={categorias} dataKey="valor" cx={80} cy={80} innerRadius={50} outerRadius={80} paddingAngle={3}
+                                            onMouseEnter={(_, i) => setHov(categorias[i].nome)} onMouseLeave={() => setHov(null)}>
+                                            {categorias.map(c => (
+                                                <Cell key={c.nome} fill={c.cor}
+                                                    opacity={hov === null || hov === c.nome ? 1 : 0.2}
+                                                    style={{ cursor: "pointer", filter: hov === c.nome ? `drop-shadow(0 0 8px ${c.cor}66)` : "none", transition: "all 0.3s" }} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip content={<CustomTooltip total={totalGastos} />} />
+                                    </PieChart>
+                                </div>
+                                <div className="legend-container">
                                     {categorias.sort((a,b) => b.valor - a.valor).map((c, i) => (
                                         <div key={c.nome} onMouseEnter={() => setHov(c.nome)} onMouseLeave={() => setHov(null)}
                                             style={{
@@ -505,14 +491,39 @@ export default function App() {
                 .animate-spin { animation: spin 1s linear infinite; }
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
                 
-                /* Remove setas de inputs numéricos */
-                input::-webkit-outer-spin-button,
-                input::-webkit-inner-spin-button {
-                    -webkit-appearance: none;
-                    margin: 0;
+                input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
+                    -webkit-appearance: none; margin: 0;
                 }
-                input[type=number] {
-                    -moz-appearance: textfield;
+                input[type=number] { -moz-appearance: textfield; }
+
+                .main-container { max-width: 660px; margin: 0 auto; padding: 20px; }
+                .summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+                .summary-card { background: #0d111755; padding: 12px; borderRadius: 16px; border: 1px solid #1e253533; text-align: center; }
+                .summary-label { fontSize: 8px; letterSpacing: 2px; color: #475569; textTransform: uppercase; marginBottom: 4px; }
+                .salary-input { background: transparent; border: none; color: #34d399; fontSize: 18px; fontWeight: 600; fontFamily: monospace; textAlign: center; width: 100%; outline: none; padding: 0; }
+                
+                .add-form { display: flex; gap: 10px; margin-bottom: 24px; padding: 16px; background: #0d111755; border-radius: 16px; border: 1px solid #1e2535; }
+                .input-desc { flex: 2; }
+                .input-val { flex: 1; }
+                .base-input { width: 100%; background: #05070a; border: 1px solid #1e2535; color: #f1f5f9; padding: 12px; border-radius: 10px; font-size: 13px; box-sizing: border-box; outline: none; transition: border-color 0.2s; }
+                .base-input:focus { border-color: #34d39966; }
+                .add-button { height: 42px; width: 42px; border-radius: 10px; background: #34d399; color: #000; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.1s; flex-shrink: 0; }
+                .add-button:active { transform: scale(0.95); }
+
+                .chart-grid { display: grid; grid-template-columns: 170px 1fr; gap: 24px; align-items: center; margin-bottom: 20px; }
+                
+                @media (max-width: 580px) {
+                    .summary-grid { grid-template-columns: 1fr 1fr; }
+                    .saldo-card { grid-column: span 2; }
+                    .add-form { flex-direction: column; }
+                    .add-button { width: 100%; height: 48px; }
+                    .chart-grid { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+                    .pie-container { margin-bottom: -20px; }
+                }
+
+                @media (max-width: 400px) {
+                    .summary-grid { grid-template-columns: 1fr; }
+                    .saldo-card { grid-column: span 1; }
                 }
             `}</style>
         </div>

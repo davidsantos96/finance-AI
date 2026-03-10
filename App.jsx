@@ -291,8 +291,10 @@ export default function App() {
                     <button title="Exportar Excel" onClick={exportarExcel} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer" }}>
                         <Table size={18} />
                     </button>
-                    <div className="main-container">
-                
+                </div>
+            </div>
+
+            <div className="main-container">
                 {/* Hero / Sumário */}
                 <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? "translateY(0)" : "translateY(16px)", transition: "all .6s ease", marginBottom: 20 }}>
                     <div className="summary-grid">
@@ -319,7 +321,6 @@ export default function App() {
                             <div style={{ fontSize: 18, fontWeight: 600, color: "#60a5fa", fontFamily: "monospace" }}>{fmt(saldo)}</div>
                         </div>
                     </div>
-                </div>        </div>
                 </div>
 
                 {/* Bloco de Ação IA */}
@@ -496,11 +497,11 @@ export default function App() {
                 }
                 input[type=number] { -moz-appearance: textfield; }
 
-                .main-container { max-width: 660px; margin: 0 auto; padding: 20px; }
+                .main-container { max-width: 660px; margin: 0 auto; padding: 20px; box-sizing: border-box; }
                 .summary-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-                .summary-card { background: #0d111755; padding: 12px; borderRadius: 16px; border: 1px solid #1e253533; text-align: center; }
-                .summary-label { fontSize: 8px; letterSpacing: 2px; color: #475569; textTransform: uppercase; marginBottom: 4px; }
-                .salary-input { background: transparent; border: none; color: #34d399; fontSize: 18px; fontWeight: 600; fontFamily: monospace; textAlign: center; width: 100%; outline: none; padding: 0; }
+                .summary-card { background: #0d111755; padding: 12px; border-radius: 16px; border: 1px solid #1e253533; text-align: center; }
+                .summary-label { font-size: 8px; font-weight: 700; letter-spacing: 2px; color: #475569; text-transform: uppercase; margin-bottom: 4px; }
+                .salary-input { background: transparent; border: none; color: #34d399; font-size: 18px; font-weight: 600; font-family: monospace; text-align: center; width: 100%; outline: none; padding: 0; }
                 
                 .add-form { display: flex; gap: 10px; margin-bottom: 24px; padding: 16px; background: #0d111755; border-radius: 16px; border: 1px solid #1e2535; }
                 .input-desc { flex: 2; }

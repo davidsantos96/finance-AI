@@ -40,8 +40,9 @@ const fmt = v => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" 
 
 // Função para formatar input de moeda (remover não-números e formatar)
 const formatCurrencyInput = (value) => {
-    if (!value) return "";
-    const digits = String(value).replace(/\D/g, "");
+    if (!value && value !== 0) return "";
+    // Usamos Math.round para evitar problemas de precisão (ex: 1.15 * 100 = 114.9999)
+    const digits = String(Math.round(value)).replace(/\D/g, "");
     const realValue = Number(digits) / 100;
     return realValue.toLocaleString("pt-BR", {
         minimumFractionDigits: 2,

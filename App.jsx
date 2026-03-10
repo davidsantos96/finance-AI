@@ -36,17 +36,22 @@ const identificarCategoria = (nome) => {
     return { cat: "Outros", cor: "#94a3b8" };
 };
 
-// Função para formatar exibição de moeda (não-editável)
-const fmt = v => (v / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+// Função para formatar exibição de moeda (estática)
+const fmt = v => {
+    const value = Math.round(v || 0);
+    const s = value.toString().padStart(3, "0");
+    const int = s.slice(0, -2).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    const dec = s.slice(-2);
+    return `R$ ${int},${dec}`;
+};
 
-// Função para formatar input de moeda (editável)
-const formatCurrencyInputCents = (cents) => {
-    if (!cents && cents !== 0) return "";
-    const realValue = Number(cents) / 100;
-    return realValue.toLocaleString("pt-BR", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
+// Função para máscara de input (dinâmica)
+const maskCurrency = (v) => {
+    if (!v && v !== 0) return "";
+    const s = Math.round(v).toString().padStart(3, "0");
+    const int = s.slice(0, -2).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    const dec = s.slice(-2);
+    return `${int},${dec}`;
 };
 
 // Componentes Auxiliares
@@ -253,7 +258,12 @@ export default function App() {
             { header: "Valor (R$)", key: "valor", width: 15 }
         ];
 
-        gastos.forEach(g => worksheet.addRow(g));
+        gastos.forEach(g => {
+            worksheet.addRow({
+                ...g,
+                valor: g.valor / 100
+            });
+        });
 
         // Estilização do cabeçalho
         worksheet.getRow(1).font = { bold: true };
@@ -305,9 +315,10 @@ export default function App() {
                                     type="text"
                                     value={salario === 0 ? "R$ 0,00" : fmt(salario)}
                                     onChange={(e) => {
-                                        const rawValue = e.target.value.replace(/\D/g, "");
-                                        setSalario(rawValue === "" ? 0 : Number(rawValue));
+                                        const raw = e.target.value.replace(/\D/g, "");
+                                        setSalario(raw ? parseInt(raw, 10) : 0);
                                     }}
+                                    onFocus={(e) => e.target.select()}
                                     className="salary-input"
                                 />
                             </div>
@@ -392,11 +403,12 @@ export default function App() {
                         <input 
                             type="text"
                             placeholder="Valor"
-                            value={novoGasto.valor === "" ? "" : formatCurrencyInputCents(novoGasto.valor)}
+                            value={novoGasto.valor === "" ? "" : maskCurrency(novoGasto.valor)}
                             onChange={e => {
-                                const rawValue = e.target.value.replace(/\D/g, "");
-                                setNovoGasto({...novoGasto, valor: rawValue === "" ? "" : Number(rawValue)});
+                                const raw = e.target.value.replace(/\D/g, "");
+                                setNovoGasto({...novoGasto, valor: raw ? parseInt(raw, 10) : ""});
                             }}
+                            onFocus={(e) => e.target.select()}
                             className="base-input"
                         />
                     </div>

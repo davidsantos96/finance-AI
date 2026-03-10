@@ -14,10 +14,11 @@ const CATEGORIA_MAP = {
     "Moradia": { cor: "#60a5fa", keywords: ["aluguel", "condominio", "luz", "água", "gas", "internet", "casa", "reforma"] },
     "Saúde": { cor: "#a78bfa", keywords: ["farmacia", "medico", "plano", "hospital", "dentista", "academia", "personal", "suplemento"] },
     "Educação": { cor: "#fde047", keywords: ["escola", "curso", "faculdade", "livro", "mensalidade", "estudo"] },
-    "Transporte": { cor: "#fb923c", keywords: ["uber", "combustivel", "gasolina", "estacionamento", "ipva", "oficina", "carro", "moto", "onibus"] },
+    "Transporte": { cor: "#fb923c", keywords: ["uber", "combustivel", "gasolina", "estacionamento", "oficina", "carro", "moto", "onibus"] },
+    "Impostos": { cor: "#475569", keywords: ["ipva", "iptu", "das", "darf", "licenciamento", "irpf", "imposto", "taxa", "mei", "gps", "fies"] },
     "Lazer": { cor: "#fb7185", keywords: ["cinema", "viagem", "show", "festa", "cerveja", "bar", "netflix", "spotify", "jogos", "steam"] },
     "Dívidas": { cor: "#f87171", keywords: ["emprestimo", "fatura", "cartao", "nubank", "parcela", "juros", "banco"] },
-    "Investimento": { cor: "#2dd4bf", keywords: ["acoes", "cripto", "tesouro", "poupanca", "invest", "cdb", "consorcio"] },
+    "Investimento": { cor: "#2dd4bf", keywords: ["acoes", "cripto", "tesouro", "poupanca", "invest", "cdb", "consorcio", "cofrinho", "caixinha", "reserva"] },
     "Outros": { cor: "#94a3b8", keywords: [] }
 };
 
@@ -120,7 +121,7 @@ export default function App() {
         const gasto = {
             id: Date.now(),
             nome: novoGasto.nome,
-            valor: parseFloat(novoGasto.valor),
+            valor: novoGasto.valor,
             cat: cat,
             cor: cor 
         };
@@ -400,11 +401,14 @@ export default function App() {
                     </div>
                     <div style={{ flex: 1 }}>
                         <input 
-                            type="number"
+                            type="text"
                             placeholder="Valor"
-                            value={novoGasto.valor}
-                            onChange={e => setNovoGasto({...novoGasto, valor: e.target.value})}
-                            style={{ width: "100%", background: "#05070a", border: "1px solid #1e2535", color: "#f1f5f9", padding: "12px", borderRadius: 10, fontSize: 13 }}
+                            value={novoGasto.valor === "" ? "" : formatCurrencyInput(Number(novoGasto.valor) * 100)}
+                            onChange={e => {
+                                const rawValue = e.target.value.replace(/\D/g, "");
+                                setNovoGasto({...novoGasto, valor: rawValue === "" ? "" : Number(rawValue) / 100});
+                            }}
+                            style={{ width: "100%", background: "#05070a", border: "1px solid #1e2535", color: "#f1f5f9", padding: "12px", borderRadius: 10, fontSize: 13, boxSizing: "border-box" }}
                         />
                     </div>
                     <button type="submit" style={{ 

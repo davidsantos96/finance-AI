@@ -1,20 +1,52 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { Plus, Trash2, TrendingUp, Download, Settings, Sparkles, AlertTriangle, CheckCircle, Loader2, FileText, Table } from "lucide-react";
-import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 
 // Configuração da IA (A chave será pedida ao usuário na UI para segurança local)
-const INITIAL_GASTOS = [
-    { id: 1, nome: "Empréstimo PJ", valor: 1212.70, cat: "Dívidas", cor: "#ff4d4d" },
-    { id: 2, nome: "Cartão Mercado Pago", valor: 662.53, cat: "Cartões", cor: "#ff8c42" },
-    { id: 3, nome: "Consórcio", valor: 674.60, cat: "Investimento", cor: "#34d399" },
-    { id: 4, nome: "Personal Trainer", valor: 400.00, cat: "Saúde", cor: "#a78bfa" },
-];
+const INITIAL_GASTOS = [];
+
+const CATEGORIA_MAP = {
+    "Alimentação": { cor: "#34d399", keywords: ["ifood", "mercado", "padaria", "restaurante", "comida", "almoço", "janta", "pão", "carne", "supermercado"] },
+    "Moradia": { cor: "#60a5fa", keywords: ["aluguel", "condominio", "luz", "água", "gas", "internet", "casa", "reforma"] },
+    "Saúde": { cor: "#a78bfa", keywords: ["farmacia", "medico", "plano", "hospital", "dentista", "academia", "personal", "suplemento"] },
+    "Educação": { cor: "#fde047", keywords: ["escola", "curso", "faculdade", "livro", "mensalidade", "estudo"] },
+    "Transporte": { cor: "#fb923c", keywords: ["uber", "combustivel", "gasolina", "estacionamento", "ipva", "oficina", "carro", "moto", "onibus"] },
+    "Lazer": { cor: "#fb7185", keywords: ["cinema", "viagem", "show", "festa", "cerveja", "bar", "netflix", "spotify", "jogos", "steam"] },
+    "Dívidas": { cor: "#f87171", keywords: ["emprestimo", "fatura", "cartao", "nubank", "parcela", "juros", "banco"] },
+    "Investimento": { cor: "#2dd4bf", keywords: ["acoes", "cripto", "tesouro", "poupanca", "invest", "cdb", "consorcio"] },
+    "Outros": { cor: "#94a3b8", keywords: [] }
+};
+
+const identificarCategoria = (nome) => {
+    // Função para remover acentos e converter para minúsculas
+    const normalizar = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    
+    const n = normalizar(nome);
+    
+    for (const [cat, info] of Object.entries(CATEGORIA_MAP)) {
+        if (info.keywords.some(k => n.includes(normalizar(k)))) {
+            return { cat, cor: info.cor };
+        }
+    }
+    return { cat: "Outros", cor: "#94a3b8" };
+};
 
 const fmt = v => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+// Função para formatar input de moeda (remover não-números e formatar)
+const formatCurrencyInput = (value) => {
+    if (!value) return "";
+    const digits = String(value).replace(/\D/g, "");
+    const realValue = Number(digits) / 100;
+    return realValue.toLocaleString("pt-BR", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+};
 
 // Componentes Auxiliares
 function AnimatedBar({ valor, total, cor, delay = 0 }) {
@@ -54,14 +86,14 @@ export default function App() {
     const [mounted, setMounted] = useState(false);
     
     // Estados dinâmicos
-    const [salario, setSalario] = useState(7000);
+    const [salario, setSalario] = useState(0);
     const [gastos, setGastos] = useState(INITIAL_GASTOS);
     const [novoGasto, setNovoGasto] = useState({ nome: "", valor: "" });
-    const [showConfig, setShowConfig] = useState(false);
     
     // Estados da IA
     const [analisando, setAnalisando] = useState(false);
     const [insights, setInsights] = useState(null);
+    const inputDescRef = useRef(null);
 
     useEffect(() => { setTimeout(() => setMounted(true), 120); }, []);
 
@@ -83,16 +115,23 @@ export default function App() {
         e.preventDefault();
         if (!novoGasto.nome || !novoGasto.valor) return;
         
+        const { cat, cor } = identificarCategoria(novoGasto.nome);
+
         const gasto = {
             id: Date.now(),
             nome: novoGasto.nome,
             valor: parseFloat(novoGasto.valor),
-            cat: "Pendente",
-            cor: "#64748b" 
+            cat: cat,
+            cor: cor 
         };
 
         setGastos([...gastos, gasto]);
         setNovoGasto({ nome: "", valor: "" });
+        
+        // Retorna o foco para o campo de descrição
+        if (inputDescRef.current) {
+            inputDescRef.current.focus();
+        }
     };
 
     const removeGasto = (id) => {
@@ -153,27 +192,29 @@ export default function App() {
         doc.text("Resumo Mensal", 14, 55);
         
         const summaryData = [
-            ["Salário Total", fmt(salario)],
-            ["Total de Gastos", fmt(totalGastos)],
-            ["Saldo Livre", fmt(saldo)]
+            ["Salário Total", fmt(salario), "100%"],
+            ["Total de Gastos", fmt(totalGastos), `${porcentagemComprometida}%`],
+            ["Saldo Livre", fmt(saldo), `${(100 - parseFloat(porcentagemComprometida)).toFixed(1)}%`]
         ];
 
-        doc.autoTable({
+        autoTable(doc, {
             startY: 60,
-            head: [["Descrição", "Valor"]],
+            head: [["Descrição", "Valor", "%"]],
             body: summaryData,
             theme: "striped",
             headStyles: { fillColor: [52, 211, 153], textColor: [0, 0, 0] }
         });
 
-        // Tabela de Gastos Detalhada
-        doc.text("Detalhamento de Gastos", 14, doc.lastAutoTable.finalY + 15);
+        const tableBody = gastos.map(g => [
+            g.nome, 
+            g.cat || "Pendente", 
+            fmt(g.valor), 
+            `${((g.valor / totalGastos) * 100).toFixed(1)}%`
+        ]);
         
-        const tableBody = gastos.map(g => [g.nome, g.cat, fmt(g.valor)]);
-        
-        doc.autoTable({
-            startY: doc.lastAutoTable.finalY + 20,
-            head: [["Item", "Categoria", "Valor"]],
+        autoTable(doc, {
+            startY: doc.lastAutoTable.finalY + 10,
+            head: [["Item", "Categoria", "Valor", "%"]],
             body: tableBody,
             theme: "grid",
             headStyles: { fillColor: [30, 37, 53], textColor: [255, 255, 255] }
@@ -249,37 +290,33 @@ export default function App() {
                     <button title="Exportar Excel" onClick={exportarExcel} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer" }}>
                         <Table size={18} />
                     </button>
-                     <button title="Configurações" onClick={() => setShowConfig(!showConfig)} style={{ background: "none", border: "none", color: showConfig ? "#34d399" : "#64748b", cursor: "pointer", transition: "color 0.2s" }}>
-                        <Settings size={18} />
-                    </button>
                 </div>
             </div>
 
             <div style={{ maxWidth: 660, margin: "0 auto", padding: "28px 20px" }}>
                 
-                {/* Configuração de Salário */}
-                {showConfig && (
-                    <div style={{ background: "#0d1117", border: "1px solid #1e2535", borderRadius: 16, padding: 20, marginBottom: 24, boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
-                         <div style={{ fontSize: 10, color: "#34d399", marginBottom: 16, textTransform: "uppercase", fontWeight: 700, letterSpacing: 1 }}>Configurações do App</div>
-                         
-                         <div style={{ marginBottom: 0 }}>
-                            <label style={{ fontSize: 11, color: "#94a3b8", display: "block", marginBottom: 6 }}>Salário Mensal (R$)</label>
-                            <input 
-                                type="number" 
-                                value={salario} 
-                                onChange={(e) => setSalario(parseFloat(e.target.value) || 0)}
-                                style={{ width: "100%", background: "#05070a", border: "1px solid #1e2535", color: "#f1f5f9", padding: "10px 14px", borderRadius: 10 }}
-                            />
-                         </div>
-                    </div>
-                )}
+
 
                 {/* Hero / Sumário */}
                 <div style={{ opacity: mounted ? 1 : 0, transform: mounted ? "translateY(0)" : "translateY(16px)", transition: "all .6s ease", marginBottom: 28 }}>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
-                        <div style={{ background: "#0d111755", padding: 14, borderRadius: 16, border: "1px solid #1e253533", textAlign: "center" }}>
-                            <div style={{ fontSize: 8, letterSpacing: 2, color: "#475569", textTransform: "uppercase", marginBottom: 6 }}>Salário</div>
-                            <div style={{ fontSize: 19, fontWeight: 600, color: "#34d399", fontFamily: "monospace" }}>{fmt(salario)}</div>
+                        <div style={{ background: "#0d111755", padding: "10px 14px", borderRadius: 16, border: "1px solid #1e253533", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                            <div style={{ fontSize: 8, letterSpacing: 2, color: "#475569", textTransform: "uppercase", marginBottom: 4 }}>Salário</div>
+                            <div style={{ position: "relative", display: "flex", justifyContent: "center" }}>
+                                <input 
+                                    type="text"
+                                    value={salario === 0 ? "R$ 0,00" : fmt(salario)}
+                                    onChange={(e) => {
+                                        const rawValue = e.target.value.replace(/\D/g, "");
+                                        setSalario(Number(rawValue) / 100);
+                                    }}
+                                    style={{ 
+                                        background: "transparent", border: "none", color: "#34d399", 
+                                        fontSize: 18, fontWeight: 600, fontFamily: "monospace", 
+                                        textAlign: "center", width: "100%", outline: "none", padding: 0
+                                    }}
+                                />
+                            </div>
                         </div>
                         <div style={{ background: "#0d111755", padding: 14, borderRadius: 16, border: "1px solid #1e253533", textAlign: "center" }}>
                             <div style={{ fontSize: 8, letterSpacing: 2, color: "#475569", textTransform: "uppercase", marginBottom: 6 }}>Gastos</div>
@@ -354,6 +391,7 @@ export default function App() {
                 }}>
                     <div style={{ flex: 2 }}>
                         <input 
+                            ref={inputDescRef}
                             placeholder="Descrição do gasto..."
                             value={novoGasto.nome}
                             onChange={e => setNovoGasto({...novoGasto, nome: e.target.value})}
@@ -395,19 +433,17 @@ export default function App() {
                     <div>
                         {gastos.length > 0 ? (
                             <div style={{ display: "grid", gridTemplateColumns: "170px 1fr", gap: 30, alignItems: "center", marginBottom: 20 }}>
-                                <ResponsiveContainer width={170} height={170}>
-                                    <PieChart>
-                                        <Pie data={categorias} dataKey="valor" cx={80} cy={80} innerRadius={50} outerRadius={80} paddingAngle={3}
-                                            onMouseEnter={(_, i) => setHov(categorias[i].nome)} onMouseLeave={() => setHov(null)}>
-                                            {categorias.map(c => (
-                                                <Cell key={c.nome} fill={c.cor}
-                                                    opacity={hov === null || hov === c.nome ? 1 : 0.2}
-                                                    style={{ cursor: "pointer", filter: hov === c.nome ? `drop-shadow(0 0 8px ${c.cor}66)` : "none", transition: "all 0.3s" }} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip content={<CustomTooltip total={totalGastos} />} />
-                                    </PieChart>
-                                </ResponsiveContainer>
+                                <PieChart width={170} height={170}>
+                                    <Pie data={categorias} dataKey="valor" cx={80} cy={80} innerRadius={50} outerRadius={80} paddingAngle={3}
+                                        onMouseEnter={(_, i) => setHov(categorias[i].nome)} onMouseLeave={() => setHov(null)}>
+                                        {categorias.map(c => (
+                                            <Cell key={c.nome} fill={c.cor}
+                                                opacity={hov === null || hov === c.nome ? 1 : 0.2}
+                                                style={{ cursor: "pointer", filter: hov === c.nome ? `drop-shadow(0 0 8px ${c.cor}66)` : "none", transition: "all 0.3s" }} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip content={<CustomTooltip total={totalGastos} />} />
+                                </PieChart>
                                 <div>
                                     {categorias.sort((a,b) => b.valor - a.valor).map((c, i) => (
                                         <div key={c.nome} onMouseEnter={() => setHov(c.nome)} onMouseLeave={() => setHov(null)}
@@ -464,6 +500,16 @@ export default function App() {
             <style>{`
                 .animate-spin { animation: spin 1s linear infinite; }
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                
+                /* Remove setas de inputs numéricos */
+                input::-webkit-outer-spin-button,
+                input::-webkit-inner-spin-button {
+                    -webkit-appearance: none;
+                    margin: 0;
+                }
+                input[type=number] {
+                    -moz-appearance: textfield;
+                }
             `}</style>
         </div>
     );

@@ -18,21 +18,27 @@ export default async function handler(req, res) {
     });
 
     const prompt = `
-      Analise os gastos abaixo e retorne APENAS um JSON:
-      Salário: ${salario}
-      Gastos: ${JSON.stringify(gastos.map(g => ({ nome: g.nome, valor: g.valor })))}
+      Você é um especialista em finanças pessoais. Analise os gastos fornecidos em relação ao salário e forneça insights acionáveis.
+      
+      DADOS:
+      Salário: R$ ${salario / 100}
+      Gastos: ${JSON.stringify(gastos.map(g => ({ nome: g.nome, valor: g.valor / 100 })))}
 
-      Formato esperado:
+      INSTRUÇÕES:
+      1. Classifique cada gasto em uma das categorias: Moradia, Alimentação, Transporte, Saúde, Lazer, Educação, Dívidas, Investimento, Outros.
+      2. Escolha cores luxuosas (hexadecimal) para cada categoria, otimizadas para modo escuro.
+      3. Seja direto e prático nos conselhos.
+      4. Retorne APENAS o JSON no formato abaixo, sem texto adicional.
+
+      FORMATO JSON ESPERADO:
       {
           "gastosAtualizados": [
               { "nomeOriginal": "...", "categoria": "...", "corHex": "..." }
           ],
-          "alerta": "Texto curto sobre algo preocupante",
-          "positivo": "Texto curto sobre algo bom",
-          "analiseIA": "Texto de conselhos de 3 linhas"
+          "alerta": "Insight sobre gastos excessivos ou riscos (máx 100 caracteres)",
+          "positivo": "Elogio sobre bons hábitos financeiros (máx 100 caracteres)",
+          "analiseIA": "Conselho estratégico de 3 linhas focado em otimização mensal"
       }
-      Categorias: Moradia, Alimentação, Transporte, Saúde, Lazer, Educação, Dívidas, Investimento, Outros.
-      Use cores luxuosas para dark mode.
     `;
 
     const response = await anthropic.messages.create({

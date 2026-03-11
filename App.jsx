@@ -11,6 +11,7 @@ import AddExpenseForm from "./src/components/AddExpenseForm";
 import Tabs from "./src/components/Tabs";
 import ChartSection from "./src/components/ChartSection";
 import ExpenseList from "./src/components/ExpenseList";
+import SaveReminderToast from "./src/components/SaveReminderToast";
 
 export default function App() {
     const [aba, setAba] = useState("geral");
@@ -83,7 +84,12 @@ export default function App() {
                     <ExpenseList gastos={gastos} onRemove={removeGasto} />
                 )}
             </div>
+
+            <SaveReminderToast
+                gastosCount={gastos.length}
+                onExportPDF={handleExportPDF}
+                onExportExcel={handleExportExcel}
+            />
         </div>
     );
 }
-

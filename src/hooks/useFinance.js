@@ -66,7 +66,7 @@ export function useFinance() {
             setInsights(data);
         } catch (error) {
             console.error("Erro na análise IA:", error);
-            alert("Erro na IA: " + error.message);
+            alert("⚠️ " + error.message);
         } finally {
             setAnalisando(false);
         }

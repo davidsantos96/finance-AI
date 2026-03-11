@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import { maskCurrency } from "../utils/currency";
+import { fmt } from "../utils/currency";
 
 export default function AddExpenseForm({ novoGasto, onChange, onSubmit, inputDescRef }) {
     return (
@@ -17,10 +17,10 @@ export default function AddExpenseForm({ novoGasto, onChange, onSubmit, inputDes
                 <input
                     type="text"
                     placeholder="Valor"
-                    value={novoGasto.valor === "" ? "" : maskCurrency(novoGasto.valor)}
+                    value={novoGasto.valor === "" || novoGasto.valor === 0 ? "R$ 0,00" : fmt(novoGasto.valor)}
                     onChange={e => {
                         const raw = e.target.value.replace(/\D/g, "");
-                        onChange({ ...novoGasto, valor: raw ? parseInt(raw, 10) : "" });
+                        onChange({ ...novoGasto, valor: raw ? parseInt(raw, 10) : 0 });
                     }}
                     onFocus={(e) => e.target.select()}
                     className="base-input"

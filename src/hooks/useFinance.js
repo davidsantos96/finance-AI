@@ -1,15 +1,40 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { identificarCategoria } from "../utils/categories";
 
+const LS_SALARIO = "financeai_salario";
+const LS_GASTOS = "financeai_gastos";
+
+function carregarLS() {
+    try {
+        return {
+            salario: JSON.parse(localStorage.getItem(LS_SALARIO)) ?? 0,
+            gastos: JSON.parse(localStorage.getItem(LS_GASTOS)) ?? [],
+        };
+    } catch {
+        return { salario: 0, gastos: [] };
+    }
+}
+
 export function useFinance() {
-    const [salario, setSalario] = useState(0);
-    const [gastos, setGastos] = useState([]);
+    const inicial = carregarLS();
+
+    const [salario, setSalario] = useState(inicial.salario);
+    const [gastos, setGastos] = useState(inicial.gastos);
     const [novoGasto, setNovoGasto] = useState({ nome: "", valor: "" });
     const [analisando, setAnalisando] = useState(false);
     const [insights, setInsights] = useState(null);
     const inputDescRef = useRef(null);
 
-    // ── Computed ────────────────────────────────────────────────────────────────
+    // ── Persistência automática no localStorage ───────────────────────────────
+    useEffect(() => {
+        localStorage.setItem(LS_SALARIO, JSON.stringify(salario));
+    }, [salario]);
+
+    useEffect(() => {
+        localStorage.setItem(LS_GASTOS, JSON.stringify(gastos));
+    }, [gastos]);
+
+    // ── Computed ──────────────────────────────────────────────────────────────
     const totalGastos = gastos.reduce((acc, g) => acc + g.valor, 0);
     const saldo = salario - totalGastos;
     const porcentagemComprometida =
@@ -25,7 +50,7 @@ export function useFinance() {
         return acc;
     }, []);
 
-    // ── Handlers ────────────────────────────────────────────────────────────────
+    // ── Handlers ──────────────────────────────────────────────────────────────
     const handleAddGasto = (e) => {
         e.preventDefault();
         if (!novoGasto.nome || !novoGasto.valor) return;
@@ -40,6 +65,31 @@ export function useFinance() {
     };
 
     const removeGasto = (id) => setGastos(prev => prev.filter(g => g.id !== id));
+
+    // Edita nome e/ou valor de um gasto existente.
+    // Recategoriza automaticamente se o nome mudar.
+    const editarGasto = (id, { nome, valor }) => {
+        setGastos(prev => prev.map(g => {
+            if (g.id !== id) return g;
+
+            const novoNome = nome ?? g.nome;
+            const novoValor = valor ?? g.valor;
+
+            const { cat, cor } = nome && nome !== g.nome
+                ? identificarCategoria(novoNome)
+                : { cat: g.cat, cor: g.cor };
+
+            return { ...g, nome: novoNome, valor: novoValor, cat, cor };
+        }));
+    };
+
+    const limparDados = () => {
+        setGastos([]);
+        setSalario(0);
+        setInsights(null);
+        localStorage.removeItem(LS_SALARIO);
+        localStorage.removeItem(LS_GASTOS);
+    };
 
     const analisarComIA = async () => {
         setAnalisando(true);
@@ -73,21 +123,20 @@ export function useFinance() {
     };
 
     return {
-        // state
         salario, setSalario,
         gastos,
         novoGasto, setNovoGasto,
         analisando,
         insights,
         inputDescRef,
-        // computed
         totalGastos,
         saldo,
         porcentagemComprometida,
         categorias,
-        // handlers
         handleAddGasto,
         removeGasto,
+        editarGasto,
+        limparDados,
         analisarComIA,
     };
 }

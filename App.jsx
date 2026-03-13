@@ -25,14 +25,13 @@ export default function App() {
         analisando, insights,
         inputDescRef,
         totalGastos, saldo, porcentagemComprometida, categorias,
-        handleAddGasto, removeGasto, analisarComIA,
+        handleAddGasto, removeGasto, editarGasto, limparDados, analisarComIA,
     } = useFinance();
 
     useEffect(() => { setTimeout(() => setMounted(true), 120); }, []);
 
     const handleExportPDF = () =>
         exportarPDF(salario, gastos, totalGastos, porcentagemComprometida, saldo, insights);
-
     const handleExportExcel = () => exportarExcel(gastos);
 
     return (
@@ -41,7 +40,12 @@ export default function App() {
             background: "linear-gradient(160deg,#080b12 0%,#0d1117 60%,#080b12 100%)",
             minHeight: "100vh", color: "#e2e8f0", paddingBottom: 60
         }}>
-            <TopBar onExportPDF={handleExportPDF} onExportExcel={handleExportExcel} />
+            <TopBar
+                onExportPDF={handleExportPDF}
+                onExportExcel={handleExportExcel}
+                onLimpar={limparDados}
+                temDados={gastos.length > 0}
+            />
 
             <div className="main-container">
                 <div style={{
@@ -81,7 +85,11 @@ export default function App() {
                 )}
 
                 {aba === "lista" && (
-                    <ExpenseList gastos={gastos} onRemove={removeGasto} />
+                    <ExpenseList
+                        gastos={gastos}
+                        onRemove={removeGasto}
+                        onEdit={editarGasto}
+                    />
                 )}
             </div>
 
